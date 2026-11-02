@@ -372,12 +372,23 @@ function initDemoForm() {
         })
       });
 
-      if (!response.ok) {
-        throw new Error('Request failed');
-      }
+    // Read and verify FormSubmit's response.
+    const result = await response.json();
 
-      form.reset();
-      status.textContent = 'Thank you. Your request has been sent. We will be in touch to agree a time.';
+    if (!response.ok || String(result.success).toLowerCase() !== 'true') {
+      throw new Error(result.message || 'Request failed');
+    }
+
+    // Record a Lead only after FormSubmit confirms success.
+    if (typeof window.fbq === 'function') {
+      window.fbq('track', 'Lead');
+    }
+
+    form.reset();
+
+    status.textContent =
+      'Thank you. Your request has been sent. We will be in touch to agree a time.';
+
     } catch (error) {
       status.textContent = `Something went wrong. Please email ${SETTINGS.demoRequestEmail} directly.`;
     } finally {
