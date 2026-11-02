@@ -1330,6 +1330,29 @@ input[type="range"]::-moz-range-thumb {
   border-color: #B91C1C;
 }
 
+.form-field textarea {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  padding: 12px 14px;
+  background: var(--white);
+  border: 1.5px solid #9CA3AF;
+  border-radius: var(--radius);
+  color: var(--ink);
+  font: 400 1rem/1.5 var(--font-body);   /* 16px stops iOS zooming into the field */
+  resize: vertical;
+}
+
+.form-field textarea::placeholder {
+  color: var(--muted);
+}
+
+.form-field textarea:focus {
+  border-color: var(--emerald);
+  outline: 3px solid rgba(21, 128, 61, 0.25);
+  outline-offset: 0;
+}
+
 .form-status {
   min-height: 1.5em;
   margin-top: 12px;

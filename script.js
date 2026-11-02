@@ -322,6 +322,7 @@ function initDemoForm() {
     const contact = String(data.get('contact')).trim();
     const orders = String(data.get('orders') || '').trim();
     const plan = String(data.get('plan'));
+    const business = String(data.get('business') || '').trim();
 
     const lines = [
       'Hello, I would like to book a free demo of AutoOrders Hub.',
@@ -366,6 +367,7 @@ function initDemoForm() {
           'Name': name,
           'Email or WhatsApp': contact,
           'Orders per day': orders || 'Not given',
+          'About the business': business || 'Not given',
           'Calculator result': calculatorSummary
         })
       });
