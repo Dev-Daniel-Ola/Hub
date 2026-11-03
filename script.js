@@ -288,17 +288,15 @@ function initStickyCta() {
    ============================================================= */
 
 /**
- * There is no server behind this page yet, so submitting the form
- * opens the visitor's email app with a ready-written message to
- * SETTINGS.demoRequestEmail. If the visitor used the calculator,
- * the result is added so the first conversation can start there.
+ * Sends demo requests through FormSubmit.
  *
- * To send requests to a form service instead, replace the
- * `window.location.href = ...` line with a fetch() call.
+ * A Meta Lead event is recorded only after FormSubmit confirms
+ * that the request was successfully submitted.
  */
 function initDemoForm() {
   const form = document.getElementById('demo-form');
   const status = document.getElementById('form-status');
+
   if (!form || !status) {
     return;
   }
@@ -318,79 +316,70 @@ function initDemoForm() {
     }
 
     const data = new FormData(form);
+
     const name = String(data.get('name')).trim();
     const contact = String(data.get('contact')).trim();
     const orders = String(data.get('orders') || '').trim();
     const plan = String(data.get('plan'));
     const business = String(data.get('business') || '').trim();
 
-    const lines = [
-      'Hello, I would like to book a free demo of AutoOrders Hub.',
-      '',
-      `Name: ${name}`,
-      `Email or WhatsApp: ${contact}`
-    ];
-
-    if (orders) {
-      lines.push(`Orders per day: ${orders}`);
-    }
-
-    if (calculatorEstimate) {
-      lines.push(
-        '',
-        'From the calculator on your site:',
-        `${calculatorEstimate.orders} orders a day, about ${formatNumber(calculatorEstimate.totalHours)} hours a month ` +
-        `(${formatNumber(calculatorEstimate.workingDays)} working days) spent on order admin.`
-      );
-    }
-
     const calculatorSummary = calculatorEstimate
       ? `${calculatorEstimate.orders} orders a day, about ${formatNumber(calculatorEstimate.totalHours)} hours a month (${formatNumber(calculatorEstimate.workingDays)} working days)`
       : 'Not used';
 
     const submitButton = form.querySelector('button[type="submit"]');
+
     submitButton.disabled = true;
     status.textContent = 'Sending...';
 
     try {
-      const response = await fetch(`https://formsubmit.co/ajax/${SETTINGS.demoRequestEmail}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          _subject: `Order request from ${name} (${plan})`,
-          'Plan': plan,
-          _template: 'table',
-          _captcha: 'false',
-          'Name': name,
-          'Email or WhatsApp': contact,
-          'Orders per day': orders || 'Not given',
-          'About the business': business || 'Not given',
-          'Calculator result': calculatorSummary
-        })
-      });
+      const response = await fetch(
+        `https://formsubmit.co/ajax/${SETTINGS.demoRequestEmail}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            _subject: `Order request from ${name} (${plan})`,
+            'Plan': plan,
+            _template: 'table',
+            _captcha: 'false',
+            'Name': name,
+            'Email or WhatsApp': contact,
+            'Orders per day': orders || 'Not given',
+            'About the business': business || 'Not given',
+            'Calculator result': calculatorSummary
+          })
+        }
+      );
 
-    // Read and verify FormSubmit's response.
-    const result = await response.json();
+      // Verify that FormSubmit successfully received the request.
+      const result = await response.json();
 
-    if (!response.ok || String(result.success).toLowerCase() !== 'true') {
-      throw new Error(result.message || 'Request failed');
-    }
+      if (
+        !response.ok ||
+        String(result.success).toLowerCase() !== 'true'
+      ) {
+        throw new Error(result.message || 'Request failed');
+      }
 
-    // Record a Lead only after FormSubmit confirms success.
-    if (typeof window.fbq === 'function') {
-      window.fbq('track', 'Lead');
-    }
+      // Record a Meta Lead event after successful submission.
+      if (typeof window.fbq === 'function') {
+        window.fbq('track', 'Lead');
+      }
 
-    form.reset();
+      form.reset();
 
-    status.textContent =
-      'Thank you. Your request has been sent. We will be in touch to agree a time.';
+      status.textContent =
+        'Thank you. Your request has been sent. We will be in touch to agree a time.';
 
     } catch (error) {
-      status.textContent = `Something went wrong. Please email ${SETTINGS.demoRequestEmail} directly.`;
+      console.error('Demo request submission failed:', error);
+
+      status.textContent =
+        'Something went wrong. Please try again or contact us directly.';
     } finally {
       submitButton.disabled = false;
     }
